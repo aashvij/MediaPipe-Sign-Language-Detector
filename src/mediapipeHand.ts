@@ -115,4 +115,4 @@ function recognizeGesture(landmarks: Landmark[]){
     else{
         textBox.textContent = " ";
     }
-}
+}   
