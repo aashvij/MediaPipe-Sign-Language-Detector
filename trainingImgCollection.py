@@ -6,9 +6,7 @@ import mediapipe as mp
 import csv
 
 IMAGES_PATH = "./practiceImgs"
-#IMAGES_PATH = "./trainingImages"
 labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-#labels = ['A', 'B', 'C']
 numberOfImgs = 15
 
 handsmp = mp.solutions.hands
