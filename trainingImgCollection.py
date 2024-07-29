@@ -1,3 +1,5 @@
+#CODE TO TAKE YOUR OWN PICTURES FOR TRAINING AND CONVERT LANDMARK COORDINATES INTO CSV FILE
+
 import cv2
 import os
 import time
@@ -5,8 +7,9 @@ import uuid
 import mediapipe as mp
 import csv
 
-IMAGES_PATH = "./practiceImgs"
-labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+IMAGES_PATH = "./testingImgs" # where images are
+#IMAGES_PATH = "./practiceImgs"
+labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 numberOfImgs = 15
 
 handsmp = mp.solutions.hands
@@ -17,19 +20,23 @@ hands = handsmp.Hands(
     min_tracking_confidence = 0.6,)
 drawingmp = mp.solutions.drawing_utils
 
-outputFile = 'hand_landmarks.csv'
+#outputFile = 'hand_landmarks.csv'
+outputFile = 'testingData.csv' #csv where data should be stored
 
 def saveData():
     with open(outputFile, mode="w", newline='') as file:
         writer = csv.writer(file)
         
-        header = ['label'] + [f'{i}_{axis}' for i in range(21) for axis in ['x', 'y', 'z']]
+        # header = ['label'] + [f'{i}_{axis}' for i in range(21) for axis in ['x', 'y', 'z']]
+        # only x and y points
+        header = ['label'] + [f'{i}_{axis}' for i in range(21) for axis in ['x', 'y']]
+
         writer.writerow(header)
 
         for label in labels:
             folderPath = os.path.join(IMAGES_PATH, label)
             for img_file in os.listdir(folderPath):
-                if img_file.endswith(".jpeg"):
+                if img_file.endswith(".jpg") or img_file.endswith(".jpeg"):
                     image_path = os.path.join(folderPath, img_file)
                     image = cv2.imread(image_path)
                     
@@ -51,10 +58,10 @@ def saveData():
                             for landmark in hand_landmarks.landmark:
                                 landmarks.append(landmark.x)
                                 landmarks.append(landmark.y)
-                                landmarks.append(landmark.z)
+                                #landmarks.append(landmark.z)
                             writer.writerow([label] + landmarks)
 
-            print(f"Landmark data saved to {outputFile}")
+            print(f"Landmark data saved to {outputFile}, {label}")
 
 
 def imgCollection():
@@ -86,14 +93,20 @@ def imgCollection():
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-saveData()
 
-# 1. install conda/pip done
-# understand/create python environment done
-# 2. install pytorch done
-# 3. run basic pytorch command.. torch.cuda.isavailable()
-# * mediapipe hands in python and opencv
-# 4. extract dataset
-# 5. write dataset class
-# 6. research which pytorch model is best for image classification .. MobileNetv2
-# 7. load the model and start training
+def fileCorruptionCheck():
+    image_dir = './practiceImgs'
+
+    for root, dirs, files in os.walk(image_dir):
+        for file in files:
+            file_path = os.path.join(root, file)
+            try:
+                img = cv2.imread(file_path)
+                if img is None:
+                    print(f"Corrupted image file: {file_path}")
+                    os.remove(file_path)
+            except Exception as e:
+                print(f"Error reading file {file_path}: {e}")
+                os.remove(file_path)
+
+saveData()
