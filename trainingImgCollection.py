@@ -7,10 +7,19 @@ import uuid
 import mediapipe as mp
 import csv
 
-IMAGES_PATH = "./testingImgs" # where images are
+# path to images
 #IMAGES_PATH = "./practiceImgs"
-labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-numberOfImgs = 15
+IMAGES_PATH = "./testingImgs"
+
+# all labels
+#labels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
+labels = ['b', 'd', 'f', 'k']
+
+numberOfImgs = 15 # for image collection (if no dataset already)
+
+#csv where data should be stored
+#outputFile = 'hand_landmarks.csv'
+outputFile = 'testingData.csv'
 
 handsmp = mp.solutions.hands
 hands = handsmp.Hands(
@@ -19,9 +28,6 @@ hands = handsmp.Hands(
     min_detection_confidence = 0.5,
     min_tracking_confidence = 0.6,)
 drawingmp = mp.solutions.drawing_utils
-
-#outputFile = 'hand_landmarks.csv'
-outputFile = 'testingData.csv' #csv where data should be stored
 
 def saveData():
     with open(outputFile, mode="w", newline='') as file:

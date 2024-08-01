@@ -2,8 +2,7 @@ import torch
 from torch import nn
 import torch.nn.functional as func
 from torch.utils.data import DataLoader, Dataset
-from torchvision import models, transforms
-from torchvision.transforms import ToTensor
+from torchvision import models
 import pandas as pd
 import ssl
 import numpy as np
@@ -35,13 +34,13 @@ class FCNN(nn.Module):
     def __init__(self):
         super(FCNN, self).__init__()
         self.fc1 = nn.Linear(42, 256)  # input layer (63) -> hidden layer (128)
-        self.bn1 = nn.BatchNorm1d(256) #normalize after each layer to help with training stability
+        self.bn1 = nn.BatchNorm1d(256)
         self.fc2 = nn.Linear(256, 128)  # input layer (63) -> hidden layer (128)
         self.bn2 = nn.BatchNorm1d(128)
         self.fc3 = nn.Linear(128, 64)  # hidden layer (128) -> hidden layer (64)
         self.bn3 = nn.BatchNorm1d(64)
         self.fc4 = nn.Linear(64, 26)  # hidden layer (64) -> output layer (26)
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.3)
 
     def forward(self, x):
         x = self.dropout(func.relu(self.bn1(self.fc1(x))))
@@ -49,6 +48,18 @@ class FCNN(nn.Module):
         x = self.dropout(func.relu(self.bn3(self.fc3(x))))
         x = self.fc4(x)
         return x
+    
+#implementation for GRU model
+class GRUModel(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, num_classes) -> None:
+        super(GRUModel, self).__init__()
+        self.gru = nn.GRU(input_size, hidden_size, num_layers, batch_first=True)
+        self.fc = nn.Linear(hidden_size, num_classes)
+
+    def forward(self, x):
+        _, hn = self.gru(x)
+        out = self.fc(hn[-1])
+        return out
 
 def train_loop(dataloader, model, loss_fn, optimizer):
     size = len(dataloader.dataset)
@@ -62,11 +73,10 @@ def train_loop(dataloader, model, loss_fn, optimizer):
         # Compute prediction and loss
         pred = model(X)
         loss = loss_fn(pred, y)
-
         # Backpropagation
         loss.backward()
         optimizer.step()
-
+    
         if batch % 10 == 0:
             loss, current = loss.item(), batch * batch_size + len(X)
             # print("predictions:", pred)
@@ -94,7 +104,7 @@ def test_loop(dataloader, model, loss_fn):
 
 #hyperparameters
 learning_rate = 0.001
-batch_size = 32
+batch_size = 50
 epochs = 50
 
 filePath = '/Users/aashvijain/projects/typescriptFirst/hand_landmarks.csv'
@@ -105,20 +115,18 @@ trainDataloader = DataLoader(trainingDataset, batch_size=batch_size, shuffle=Tru
 testDataloader = DataLoader(testingDataset, batch_size=batch_size, shuffle=True)
 
 model = FCNN().to(device)
-#load pretrained Resnet50 model
-#model = models.resnet50(weights="ResNet50_Weights.DEFAULT")
-# model = SimpleFCNN(input_size=63, num_classes=26).to(device)
-#model = torch.nn.Conv1d(in_channels=63, out_channels=26, kernel_size=1)
+#model = GRUModel(input_size = 42, hidden_size = 512, num_layers=5, num_classes=26).to(device)
 
 #Loss Function: L(y, y') = -∑(y * log(y'))
 # - sum of observed (1) * log of predicted probability of a certin classification --> comes from KL probability formula
 loss_fn = nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-#scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1) #change learning rate
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.01) #change learning rate
 
 for epoch in range(epochs):
     print(f"Epoch number {epoch+1}")
     train_loop(trainDataloader, model, loss_fn, optimizer)
+    scheduler.step()
     val_loss, correct = test_loop(testDataloader, model, loss_fn)
 
 print("Done")
